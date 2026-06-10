@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://burxon.example/sitemap.xml

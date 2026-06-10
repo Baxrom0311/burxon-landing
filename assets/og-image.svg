@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Burxon Smart Bell">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d3c7a"/>
+      <stop offset="1" stop-color="#3a7fff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g transform="translate(120,150)" fill="#ffffff" font-family="Inter, system-ui, sans-serif">
+    <text x="0" y="0" font-size="72" font-weight="800">Burxon</text>
+    <text x="0" y="80" font-size="36" font-weight="500" opacity="0.9">
+      Maktab qo‘ng‘iroqlarini avtomatlashtiring
+    </text>
+    <text x="0" y="170" font-size="26" opacity="0.85">
+      ESP32 qurilma + Mobil ilova = To‘liq nazorat
+    </text>
+    <g transform="translate(0,260)" font-size="22" opacity="0.95">
+      <text y="0">📱  Telefondan boshqarish</text>
+      <text y="40">📅  Avtomatik jadval</text>
+      <text y="80">🔔  Favqulodda signal</text>
+    </g>
+  </g>
+  <g transform="translate(900,200)" fill="#ffffff" opacity="0.9">
+    <circle cx="100" cy="100" r="140" fill="#ffffff" opacity="0.08"/>
+    <text x="100" y="130" text-anchor="middle" font-size="160">🔔</text>
+  </g>
+</svg>

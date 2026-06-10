@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="uz" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>Burxon — Maktab qo‘ng‘iroqlarini avtomatlashtiring</title>
+    <meta
+      name="description"
+      content="Burxon — ESP32 qurilmasi va mobil ilova orqali maktab qo‘ng‘iroqlarini avtomatlashtirish tizimi. Jadval, bayramlar, favqulodda signal — bir joyda."
+    />
+    <link rel="canonical" href="https://burxon.example/" />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="product" />
+    <meta property="og:title" content="Burxon — Maktab qo‘ng‘iroqlarini avtomatlashtiring" />
+    <meta
+      property="og:description"
+      content="ESP32 qurilma + Mobil ilova = To‘liq nazorat. Jadval, bayramlar, favqulodda signal — bitta tugmada."
+    />
+    <meta property="og:image" content="/assets/og-image.svg" />
+    <meta property="og:url" content="https://burxon.example/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Burxon — Maktab qo‘ng‘iroqlari" />
+    <meta name="twitter:description" content="ESP32 + Mobil ilova bilan to‘liq avtomatlashtirilgan qo‘ng‘iroq tizimi." />
+
+    <!-- Performance hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" />
+
+    <!-- Fonts: Inter, font-display: swap (handled by Google Fonts &display=swap) -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    />
+
+    <!-- CSP suited to the CDNs we use. Tightened: no inline scripts except theme bootstrap (kept small for FCP). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' mailto:"
+    />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="apple-touch-icon" href="/assets/icon-192.svg" />
+
+    <!-- JSON-LD: Product schema -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Burxon Smart Bell",
+        "description": "ESP32-asoslangan maktab qo‘ng‘irog‘i va boshqaruv ilovasi.",
+        "brand": { "@type": "Brand", "name": "Burxon" },
+        "offers": {
+          "@type": "Offer",
+          "priceCurrency": "UZS",
+          "price": "0",
+          "availability": "https://schema.org/PreOrder"
+        }
+      }
+    </script>
+
+    <!-- Theme bootstrap (must run before paint to avoid flash). Inline by design. -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('burxon-theme');
+          var prefersDark =
+            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = stored ? stored === 'dark' : prefersDark;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (_) {}
+      })();
+    </script>
+
+    <!-- Tailwind CDN with dark-mode = class, deferred to keep FCP fast -->
+    <script>
+      // Tailwind CDN reads this before loading
+      window.tailwind = window.tailwind || {};
+      window.tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                'Inter',
+                'ui-sans-serif',
+                'system-ui',
+                '-apple-system',
+                'Segoe UI',
+                'Roboto',
+                'sans-serif'
+              ]
+            },
+            colors: {
+              brand: {
+                50: '#eef6ff',
+                100: '#d9eaff',
+                200: '#bcd9ff',
+                300: '#8ebfff',
+                400: '#5b9dff',
+                500: '#3a7fff',
+                600: '#2864ef',
+                700: '#214fc6',
+                800: '#1f449b',
+                900: '#1d3c7a'
+              }
+            }
+          }
+        }
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com" defer></script>
+
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      html {
+        font-family:
+          'Inter',
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      /* Visible focus ring for keyboard users */
+      :focus-visible {
+        outline: 2px solid #3a7fff;
+        outline-offset: 2px;
+        border-radius: 6px;
+      }
+      /* Reduce motion when user prefers */
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-brand-600 focus:px-3 focus:py-2 focus:text-white"
+    >
+      Asosiy mazmunga o‘tish
+    </a>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+        <a href="/" class="flex items-center gap-2 font-semibold">
+          <span
+            class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white"
+            aria-hidden="true"
+          >
+            🔔
+          </span>
+          <span>Burxon</span>
+        </a>
+        <nav aria-label="Asosiy navigatsiya" class="hidden items-center gap-6 text-sm md:flex">
+          <a class="hover:text-brand-600" href="#features">Imkoniyatlar</a>
+          <a class="hover:text-brand-600" href="#how">Qanday ishlaydi</a>
+          <a class="hover:text-brand-600" href="#pricing">Narxlar</a>
+          <a class="hover:text-brand-600" href="#faq">Savollar</a>
+          <a class="hover:text-brand-600" href="#contact">Bog‘lanish</a>
+        </nav>
+        <div class="flex items-center gap-2">
+          <button
+            id="theme-toggle"
+            type="button"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            aria-label="Yorug‘/qorong‘i rejimni almashtirish"
+          >
+            <span aria-hidden="true" id="theme-icon">🌙</span>
+          </button>
+          <a
+            href="#contact"
+            class="hidden rounded-md bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 sm:inline-flex"
+          >
+            Bog‘lanish
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- Hero -->
+      <section class="relative overflow-hidden">
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-brand-50 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-950"
+        ></div>
+        <div class="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-24">
+          <div class="flex flex-col justify-center">
+            <p class="mb-3 inline-flex w-fit items-center gap-2 rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-800 dark:bg-brand-900/40 dark:text-brand-200">
+              <span aria-hidden="true">✨</span> Yangi: OTA va offline rejim
+            </p>
+            <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl">
+              Maktab qo‘ng‘iroqlarini avtomatlashtiring
+            </h1>
+            <p class="mt-4 max-w-prose text-lg text-slate-600 dark:text-slate-300">
+              <strong>ESP32 qurilma + Mobil ilova = To‘liq nazorat.</strong> Jadval, bayramlar va
+              favqulodda signal — hammasi bitta joyda. Internet uzilsa ham ishlaydi.
+            </p>
+            <div class="mt-8 flex flex-wrap gap-3">
+              <a
+                href="#contact"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-5 py-3 font-medium text-white shadow hover:bg-brand-700"
+              >
+                Bepul sinab ko‘ring
+              </a>
+              <a
+                href="#how"
+                class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-5 py-3 font-medium hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+              >
+                Qanday ishlaydi
+              </a>
+            </div>
+            <dl class="mt-10 grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <dt class="text-slate-500 dark:text-slate-400">Aniqlik</dt>
+                <dd class="text-2xl font-bold">±1s</dd>
+              </div>
+              <div>
+                <dt class="text-slate-500 dark:text-slate-400">Offline kun</dt>
+                <dd class="text-2xl font-bold">7+</dd>
+              </div>
+              <div>
+                <dt class="text-slate-500 dark:text-slate-400">O‘rnatish</dt>
+                <dd class="text-2xl font-bold">5 daq.</dd>
+              </div>
+            </dl>
+          </div>
+          <div class="relative">
+            <div
+              class="aspect-[4/3] w-full rounded-2xl border border-slate-200 bg-gradient-to-br from-brand-100 to-white p-6 shadow-xl dark:border-slate-800 dark:from-slate-800 dark:to-slate-900"
+              role="img"
+              aria-label="Burxon qurilma va ilova illyustratsiyasi"
+            >
+              <div class="flex h-full flex-col items-center justify-center gap-4 text-center">
+                <div class="text-7xl" aria-hidden="true">🔔</div>
+                <div class="text-sm text-slate-500 dark:text-slate-400">
+                  ESP32 + Wi-Fi + RTC + OTA
+                </div>
+                <div
+                  class="grid grid-cols-3 gap-2 text-xs text-slate-700 dark:text-slate-200"
+                  aria-hidden="true"
+                >
+                  <span class="rounded-md bg-white/70 px-2 py-1 shadow-sm dark:bg-slate-900/60">MQTT</span>
+                  <span class="rounded-md bg-white/70 px-2 py-1 shadow-sm dark:bg-slate-900/60">TLS</span>
+                  <span class="rounded-md bg-white/70 px-2 py-1 shadow-sm dark:bg-slate-900/60">RTC</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pain points -->
+      <section class="border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
+        <div class="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+          <h2 class="text-center text-2xl font-bold sm:text-3xl">Tanish muammolar</h2>
+          <p class="mx-auto mt-2 max-w-2xl text-center text-slate-600 dark:text-slate-300">
+            Qo‘ng‘iroq jadvalini qo‘lda boshqarish vaqt yo‘qotadi va xatolarga olib keladi.
+          </p>
+          <div class="mt-10 grid gap-4 md:grid-cols-3">
+            <article class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+              <h3 class="font-semibold">⏰ Qo‘ng‘iroq vaqtida hech kim yo‘q</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Qo‘riqchi yo‘q, jadval o‘zgardi — qo‘ng‘iroq vaqtida chalinmadi.
+              </p>
+            </article>
+            <article class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+              <h3 class="font-semibold">🎉 Bayramlarda chalindi</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Dam olish kunlari va bayramlarni qo‘lda hisobga olish kerak.
+              </p>
+            </article>
+            <article class="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+              <h3 class="font-semibold">🔧 Jadval o‘zgardi — qayta sozlash</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Har bir o‘zgarishda qurilmani ochib, qayta dasturlash zerikarli.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section id="features" class="scroll-mt-20">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="text-2xl font-bold sm:text-3xl">Yechim — Burxon</h2>
+            <p class="mt-2 text-slate-600 dark:text-slate-300">
+              Bitta qurilma, bitta ilova, bitta hisob. Hammasi sinxron.
+            </p>
+          </div>
+          <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <article class="rounded-xl border border-slate-200 bg-white p-6 transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+              <div class="text-3xl" aria-hidden="true">📱</div>
+              <h3 class="mt-3 font-semibold">Telefondan boshqarish</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Bir necha klikda jadval, qo‘ng‘iroq davomiyligi va taymerlar.
+              </p>
+            </article>
+            <article class="rounded-xl border border-slate-200 bg-white p-6 transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+              <div class="text-3xl" aria-hidden="true">📅</div>
+              <h3 class="mt-3 font-semibold">Avtomatik jadval</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Hafta kunlari, bayramlar, ta’til haftasi — barchasi hisobga olinadi.
+              </p>
+            </article>
+            <article class="rounded-xl border border-slate-200 bg-white p-6 transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+              <div class="text-3xl" aria-hidden="true">🔔</div>
+              <h3 class="mt-3 font-semibold">Favqulodda signal</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Bir tugma — barcha qurilmalarga zudlik bilan signal yuboriladi.
+              </p>
+            </article>
+            <article class="rounded-xl border border-slate-200 bg-white p-6 transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+              <div class="text-3xl" aria-hidden="true">📡</div>
+              <h3 class="mt-3 font-semibold">Real-time sinxronlash</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                MQTT TLS orqali bir necha sekundda yangilanish.
+              </p>
+            </article>
+            <article class="rounded-xl border border-slate-200 bg-white p-6 transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+              <div class="text-3xl" aria-hidden="true">🔋</div>
+              <h3 class="mt-3 font-semibold">Internet yo‘q? Muammo yo‘q</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Mahalliy RTC va kesh — internet uzilsa ham qo‘ng‘iroq chalinadi.
+              </p>
+            </article>
+            <article class="rounded-xl border border-slate-200 bg-white p-6 transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+              <div class="text-3xl" aria-hidden="true">🔄</div>
+              <h3 class="mt-3 font-semibold">OTA yangilanish</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Qurilmani ochmasdan, masofadan yangilash. Xato bo‘lsa avtomatik orqaga qaytadi.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="text-2xl font-bold sm:text-3xl">Qanday ishlaydi</h2>
+            <p class="mt-2 text-slate-600 dark:text-slate-300">3 oddiy qadam — boshqasi avtomatik.</p>
+          </div>
+          <ol class="mt-10 grid gap-6 md:grid-cols-3">
+            <li class="rounded-xl bg-white p-6 shadow-sm dark:bg-slate-900">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 font-bold text-white">1</div>
+              <h3 class="mt-4 font-semibold">Qurilmani o‘rnating</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Quvvat va qo‘ng‘iroq simini ulang. 5 daqiqada tayyor.
+              </p>
+            </li>
+            <li class="rounded-xl bg-white p-6 shadow-sm dark:bg-slate-900">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 font-bold text-white">2</div>
+              <h3 class="mt-4 font-semibold">Ilovani yuklab oling</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Qurilmani QR-kod orqali hisobingizga bog‘lang.
+              </p>
+            </li>
+            <li class="rounded-xl bg-white p-6 shadow-sm dark:bg-slate-900">
+              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 font-bold text-white">3</div>
+              <h3 class="mt-4 font-semibold">Jadval belgilang — tamom!</h3>
+              <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                Bayramlar va ta’til haftasi avtomatik hisobga olinadi.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Pricing -->
+      <section id="pricing" class="scroll-mt-20">
+        <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24">
+          <div class="mx-auto max-w-2xl text-center">
+            <h2 class="text-2xl font-bold sm:text-3xl">Narxlar</h2>
+            <p class="mt-2 text-slate-600 dark:text-slate-300">Yashirin to‘lovlarsiz, oylik to‘lov yo‘q.</p>
+          </div>
+          <div class="mx-auto mt-10 grid max-w-3xl gap-6 sm:grid-cols-2">
+            <article class="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+              <h3 class="font-semibold">Qurilma</h3>
+              <p class="mt-2 text-3xl font-extrabold">
+                <span aria-label="Narx so‘rab oling">— so‘m</span>
+              </p>
+              <p class="mt-1 text-sm text-slate-500">Aniq narx uchun bog‘laning</p>
+              <ul class="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                <li>• ESP32 + RTC + reley</li>
+                <li>• Kafolat 12 oy</li>
+                <li>• OTA yangilanishlar bepul</li>
+              </ul>
+            </article>
+            <article class="rounded-2xl border-2 border-brand-600 bg-white p-6 dark:bg-slate-900">
+              <h3 class="font-semibold text-brand-700 dark:text-brand-300">Ilova</h3>
+              <p class="mt-2 text-3xl font-extrabold">Bepul</p>
+              <p class="mt-1 text-sm text-slate-500">Cheksiz foydalanuvchilar</p>
+              <ul class="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                <li>• Web va mobil</li>
+                <li>• Real-time sync</li>
+                <li>• Push bildirishnomalar</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="scroll-mt-20 border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
+        <div class="mx-auto max-w-3xl px-4 py-16 sm:px-6 md:py-24">
+          <h2 class="text-center text-2xl font-bold sm:text-3xl">Tez-tez beriladigan savollar</h2>
+          <div class="mt-8 divide-y divide-slate-200 rounded-xl bg-white dark:divide-slate-800 dark:bg-slate-900">
+            <details class="group p-5">
+              <summary class="flex cursor-pointer items-center justify-between font-medium">
+                <span>Internet kerakmi?</span>
+                <span class="transition group-open:rotate-180" aria-hidden="true">▾</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                Dastlabki sozlash uchun ha. Keyin qurilma offline ishlaydi: mahalliy RTC va kesh
+                yordamida 7+ kun internetdsiz to‘g‘ri qo‘ng‘iroqlar chalinadi.
+              </p>
+            </details>
+            <details class="group p-5">
+              <summary class="flex cursor-pointer items-center justify-between font-medium">
+                <span>Qurilma uzoq vaqt ishlaydimi?</span>
+                <span class="transition group-open:rotate-180" aria-hidden="true">▾</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                Sanoat darajasidagi komponentlar va watchdog timer doim ishlashni ta’minlaydi. OTA
+                yangilanishlar avtomatik tarzda yuklanadi.
+              </p>
+            </details>
+            <details class="group p-5">
+              <summary class="flex cursor-pointer items-center justify-between font-medium">
+                <span>Necha qurilma ulash mumkin?</span>
+                <span class="transition group-open:rotate-180" aria-hidden="true">▾</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                Bitta hisob ostida cheksiz qurilma. Maktab tarmog‘i, filiallar — hammasi bitta
+                ilovada.
+              </p>
+            </details>
+            <details class="group p-5">
+              <summary class="flex cursor-pointer items-center justify-between font-medium">
+                <span>Kafolat qancha?</span>
+                <span class="transition group-open:rotate-180" aria-hidden="true">▾</span>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                Qurilma uchun 12 oy kafolat. Server xizmati uzluksiz ishlaydi.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <section id="contact" class="scroll-mt-20">
+        <div class="mx-auto max-w-3xl px-4 py-16 sm:px-6 md:py-24">
+          <h2 class="text-center text-2xl font-bold sm:text-3xl">Buyurtma berish</h2>
+          <p class="mx-auto mt-2 max-w-xl text-center text-slate-600 dark:text-slate-300">
+            Telegram yoki telefon orqali bog‘laning. Yoki shu yerda qoldiring — biz yozamiz.
+          </p>
+
+          <div class="mt-8 grid gap-4 sm:grid-cols-3">
+            <a
+              href="https://t.me/burxon_support"
+              class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
+              aria-label="Telegram orqali bog‘lanish"
+            >
+              <span class="text-2xl" aria-hidden="true">💬</span>
+              <div>
+                <div class="font-semibold">Telegram</div>
+                <div class="text-sm text-slate-500">@burxon_support</div>
+              </div>
+            </a>
+            <a
+              href="tel:+998000000000"
+              class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
+              aria-label="Telefon qilish"
+            >
+              <span class="text-2xl" aria-hidden="true">📞</span>
+              <div>
+                <div class="font-semibold">Telefon</div>
+                <div class="text-sm text-slate-500">+998 00 000 00 00</div>
+              </div>
+            </a>
+            <a
+              href="mailto:hello@burxon.example?subject=Buyurtma%20so%E2%80%98rovi"
+              class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800"
+              aria-label="Email yuborish"
+            >
+              <span class="text-2xl" aria-hidden="true">✉️</span>
+              <div>
+                <div class="font-semibold">Email</div>
+                <div class="text-sm text-slate-500">hello@burxon.example</div>
+              </div>
+            </a>
+          </div>
+
+          <!--
+            Form posts via mailto: by default to avoid handling PII server-side without consent.
+            TODO: replace with Formspree or your own /api endpoint and add a privacy notice.
+          -->
+          <form
+            action="mailto:hello@burxon.example"
+            method="post"
+            enctype="text/plain"
+            class="mt-10 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
+            aria-label="Buyurtma formi"
+          >
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="block">
+                <span class="text-sm font-medium">Ism</span>
+                <input
+                  required
+                  name="name"
+                  type="text"
+                  autocomplete="name"
+                  class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+                />
+              </label>
+              <label class="block">
+                <span class="text-sm font-medium">Telefon</span>
+                <input
+                  required
+                  name="phone"
+                  type="tel"
+                  inputmode="tel"
+                  autocomplete="tel"
+                  class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+                />
+              </label>
+              <label class="block sm:col-span-2">
+                <span class="text-sm font-medium">Maktab nomi</span>
+                <input
+                  name="school"
+                  type="text"
+                  class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+                />
+              </label>
+              <label class="block sm:col-span-2">
+                <span class="text-sm font-medium">Izoh (ixtiyoriy)</span>
+                <textarea
+                  name="message"
+                  rows="3"
+                  class="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+                ></textarea>
+              </label>
+            </div>
+            <button
+              type="submit"
+              class="mt-5 w-full rounded-md bg-brand-600 px-4 py-2.5 font-medium text-white hover:bg-brand-700 sm:w-auto"
+            >
+              Yuborish
+            </button>
+            <p class="mt-3 text-xs text-slate-500">
+              Yuborganda email mijozingiz ochiladi. Ma'lumotlaringiz uchinchi shaxsga uzatilmaydi.
+            </p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-slate-200 bg-white py-8 dark:border-slate-800 dark:bg-slate-950">
+      <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-sm text-slate-500 sm:flex-row sm:px-6">
+        <div>© <span id="year">2026</span> Burxon. Barcha huquqlar himoyalangan.</div>
+        <div class="flex gap-4">
+          <a href="#features" class="hover:text-brand-600">Imkoniyatlar</a>
+          <a href="#faq" class="hover:text-brand-600">FAQ</a>
+          <a href="#contact" class="hover:text-brand-600">Bog‘lanish</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/assets/main.js" defer></script>
+  </body>
+</html>
